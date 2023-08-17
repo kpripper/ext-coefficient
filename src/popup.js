@@ -2,100 +2,71 @@
 
 import './popup.css';
 
-(function () {
-  // We will make use of Storage API to get and store `count` value
-  // More information on Storage API can we found at
-  // https://developer.chrome.com/extensions/storage
+document.addEventListener('DOMContentLoaded', function() {
+  const calculateButton = document.getElementById('calculateButton');
+  const progressBar = document.getElementById('progress');
+  const loadingBar = document.getElementById('loadingBar');
+  const coefficientValueElement = document.getElementById('coefficientValue');
 
-  // To get storage access, we have to mention it in `permissions` property of manifest.json file
-  // More information on Permissions can we found at
-  // https://developer.chrome.com/extensions/declare_permissions
-  const counterStorage = {
-    get: (cb) => {
-      chrome.storage.sync.get(['count'], (result) => {
-        cb(result.count);
-      });
-    },
-    set: (value, cb) => {
-      chrome.storage.sync.set(
-        {
-          count: value,
-        },
-        () => {
-          cb();
-        }
-      );
-    },
-  };
+  // console.log('calculateButton', calculateButton)
 
-  function setupCounter(initialValue = 0) {
-    document.getElementById('counter').innerHTML = initialValue;
+  calculateButton.addEventListener('click', function() {
+    console.log('calculateButton click')
+    simulateLoading();
+    setTimeout(calculateCoefficient, 3000);
+  });
 
-    document.getElementById('incrementBtn').addEventListener('click', () => {
-      updateCounter({
-        type: 'INCREMENT',
-      });
-    });
 
-    document.getElementById('decrementBtn').addEventListener('click', () => {
-      updateCounter({
-        type: 'DECREMENT',
-      });
-    });
-  }
+  let width = 0;
 
-  function updateCounter({ type }) {
-    counterStorage.get((count) => {
-      let newCount;
+  function simulateLoading() {
+    calculateButton.disabled = true;
+    coefficientValueElement.style.display = 'none';
+    progressBar.style.display = 'block';
+    loadingBar.style.display = 'block';
+    progressBar.style.width = '0%';
 
-      if (type === 'INCREMENT') {
-        newCount = count + 1;
-      } else if (type === 'DECREMENT') {
-        newCount = count - 1;
+    const interval = setInterval(function() {
+      if (width >= 100) {
+        console.log('width 100')
+        clearInterval(interval);
+        calculateButton.disabled = false;
+        width = 0
       } else {
-        newCount = count;
+
+        width++;
+        console.log('width', width)
+        progressBar.style.width = width + '%';
       }
-
-      counterStorage.set(newCount, () => {
-        document.getElementById('counter').innerHTML = newCount;
-
-        // Communicate with content script of
-        // active tab by sending a message
-        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-          const tab = tabs[0];
-
-          chrome.tabs.sendMessage(
-            tab.id,
-            {
-              type: 'COUNT',
-              payload: {
-                count: newCount,
-              },
-            },
-            (response) => {
-              console.log('Current count value passed to contentScript file');
-            }
-          );
-        });
-      });
-    });
+    }, 30);
   }
 
-  function restoreCounter() {
-    // Restore count value
-    counterStorage.get((count) => {
-      if (typeof count === 'undefined') {
-        // Set counter value as 0
-        counterStorage.set(0, () => {
-          setupCounter(0);
-        });
-      } else {
-        setupCounter(count);
-      }
-    });
+  function calculateCoefficient() {
+    const randomValue = Math.random();
+    let coefficient;
+  
+    if (randomValue <= 0.5) {
+      coefficient = (1.00 + (0.3 * Math.random())).toFixed(2);
+    } else if (randomValue <= 0.75) {
+      coefficient = (1.3 + (0.2 * Math.random())).toFixed(2);
+    } else if (randomValue <= 0.95) {
+      coefficient = (1.5 + (0.5 * Math.random())).toFixed(2);
+    } else if (randomValue <= 0.99) {
+      coefficient = (2 + (1 * Math.random())).toFixed(2);
+    } else if (randomValue <= 0.999) {
+      coefficient = (3 + (2 * Math.random())).toFixed(2);
+    } else {
+      coefficient = (5 + (5 * Math.random())).toFixed(2);
+    }
+  
+ 
+    coefficientValueElement.textContent = `Coefficient: ${coefficient}`;
+    coefficientValueElement.style.display = 'block';  
+    loadingBar.style.display = 'none';
+    progressBar.style.display = 'none';
+    
   }
-
-  document.addEventListener('DOMContentLoaded', restoreCounter);
+});
 
   // Communicate with background file by sending a message
   chrome.runtime.sendMessage(
@@ -109,4 +80,4 @@ import './popup.css';
       console.log(response.message);
     }
   );
-})();
+
